@@ -72,7 +72,6 @@ cat > /tmp/create_target_request.json<<EOF
     "name": "$CELLO_TARGET_NAME",
     "type": "aws_account",
     "properties": {
-        "credential_type": "assumed_role",
         "policy_arns": [],
         "role_arn": "arn:aws:iam::$ACCOUNT_ID:role/$ROLE_NAME"
     }

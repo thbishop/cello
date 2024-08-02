@@ -17,14 +17,12 @@ func TestTargetPropertiesValidate(t *testing.T) {
 		{
 			name: "valid minimal",
 			properties: TargetProperties{
-				CredentialType: "assumed_role",
-				RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+				RoleArn: "arn:aws:iam::012345678901:role/test-role",
 			},
 		},
 		{
 			name: "valid full",
 			properties: TargetProperties{
-				CredentialType: "assumed_role",
 				RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 				PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
 				PolicyArns: []string{
@@ -39,15 +37,13 @@ func TestTargetPropertiesValidate(t *testing.T) {
 		{
 			name: "role_arn must be an arn",
 			properties: TargetProperties{
-				CredentialType: "assumed_role",
-				RoleArn:        "not-an-arn",
+				RoleArn: "not-an-arn",
 			},
 			wantErr: errors.New("role_arn must be a valid arn"),
 		},
 		{
 			name: "too many policy arns",
 			properties: TargetProperties{
-				CredentialType: "assumed_role",
 				PolicyArns: []string{
 					"arn:aws:iam::012345678901:policy/test-policy-1",
 					"arn:aws:iam::012345678901:policy/test-policy-2",
@@ -63,7 +59,6 @@ func TestTargetPropertiesValidate(t *testing.T) {
 		{
 			name: "policy arns must be valid",
 			properties: TargetProperties{
-				CredentialType: "assumed_role",
 				PolicyArns: []string{
 					"arn:aws:iam::012345678901:policy/test-policy-1",
 					"not-an-arn",
@@ -97,8 +92,7 @@ func TestCTargetValidate(t *testing.T) {
 			target: Target{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+					RoleArn: "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "aws_account",
 			},
@@ -108,7 +102,6 @@ func TestCTargetValidate(t *testing.T) {
 			target: Target{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "assumed_role",
 					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
 					PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
 					PolicyArns: []string{
@@ -126,8 +119,7 @@ func TestCTargetValidate(t *testing.T) {
 			name: "missing name",
 			target: Target{
 				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+					RoleArn: "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "aws_account",
 			},
@@ -138,8 +130,7 @@ func TestCTargetValidate(t *testing.T) {
 			target: Target{
 				Name: "this-is-invalid",
 				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+					RoleArn: "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "aws_account",
 			},
@@ -150,8 +141,7 @@ func TestCTargetValidate(t *testing.T) {
 			target: Target{
 				Name: "abc",
 				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+					RoleArn: "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "aws_account",
 			},
@@ -162,8 +152,7 @@ func TestCTargetValidate(t *testing.T) {
 			target: Target{
 				Name: "a12345678901234567890123456789012",
 				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+					RoleArn: "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "aws_account",
 			},
@@ -174,8 +163,7 @@ func TestCTargetValidate(t *testing.T) {
 			target: Target{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+					RoleArn: "arn:aws:iam::012345678901:role/test-role",
 				},
 			},
 			wantErr: errors.New("type is required"),
@@ -185,44 +173,18 @@ func TestCTargetValidate(t *testing.T) {
 			target: Target{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
+					RoleArn: "arn:aws:iam::012345678901:role/test-role",
 				},
 				Type: "bad",
 			},
 			wantErr: errors.New("type must be one of 'aws_account'"),
 		},
 		{
-			name: "missing credential_type",
-			target: Target{
-				Name: "target1",
-				Properties: TargetProperties{
-					RoleArn: "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("credential_type is required"),
-		},
-		{
-			name: "invalid credential_type",
-			target: Target{
-				Name: "target1",
-				Properties: TargetProperties{
-					CredentialType: "bad",
-					RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-				},
-				Type: "aws_account",
-			},
-			wantErr: errors.New("credential_type must be one of 'assumed_role'"),
-		},
-		{
 			name: "missing role_arn",
 			target: Target{
-				Name: "target1",
-				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-				},
-				Type: "aws_account",
+				Name:       "target1",
+				Properties: TargetProperties{},
+				Type:       "aws_account",
 			},
 			wantErr: errors.New("role_arn is required"),
 		},
@@ -231,8 +193,7 @@ func TestCTargetValidate(t *testing.T) {
 			target: Target{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "assumed_role",
-					RoleArn:        "not-an-arn",
+					RoleArn: "not-an-arn",
 				},
 				Type: "aws_account",
 			},
@@ -243,7 +204,6 @@ func TestCTargetValidate(t *testing.T) {
 			target: Target{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "assumed_role",
 					PolicyArns: []string{
 						"arn:aws:iam::012345678901:policy/test-policy-1",
 						"arn:aws:iam::012345678901:policy/test-policy-2",
@@ -263,7 +223,6 @@ func TestCTargetValidate(t *testing.T) {
 			target: Target{
 				Name: "target1",
 				Properties: TargetProperties{
-					CredentialType: "assumed_role",
 					PolicyArns: []string{
 						"arn:aws:iam::012345678901:policy/test-policy-1",
 						"not-an-arn",

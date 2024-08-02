@@ -44,6 +44,7 @@ Projects can only be deleted if they have no targets
 Response Body
 
 ```
+
 ```
 
 ## Create Token
@@ -53,9 +54,11 @@ POST /projects/<project_name>/tokens
 Request Body
 
 ```json
+
 ```
 
 Response Body
+
 ```json
 {
   "created_at": "2022-06-27T21:59:58-07:00",
@@ -64,8 +67,6 @@ Response Body
   "token_id": "abcdef12-3456-7890-abcd-ef1234567890"
 }
 ```
-
-
 
 ## Create Target
 
@@ -78,7 +79,6 @@ Request Body
   "name": "target1",
   "type": "aws_account",
   "properties": {
-    "credential_type": "assumed_role",
     "policy_arns": [
       "arn:aws:iam::aws:policy/AmazonS3FullAccess",
       "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
@@ -94,8 +94,7 @@ Request Body
 Note: `role_arn` will be assumed as the target by vault. Vault's IAM
 credentials must be a principle authorized to assume this role. The
 `policy_arns` and `policy_document` will be applied at role assumption time to
-scope down permissions. Today only type is only `aws_account` and
-`credential_type` is only assumed role.
+scope down permissions.
 
 Response Body
 
@@ -124,7 +123,6 @@ Response Body
   "name": "target1",
   "type": "aws_account",
   "properties": {
-    "credential_type": "assumed_role",
     "policy_arns": [
       "arn:aws:iam::aws:policy/AmazonS3FullAccess",
       "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
@@ -160,7 +158,6 @@ Request Body
 
 Note: Target properties that are provided will be updated with the new values provided.
 Properties that are not provided in the PATCH request will remain with their current values.
-`credential_type` cannot be updated
 
 Response Body
 
@@ -169,7 +166,6 @@ Response Body
   "name": "target1",
   "type": "aws_account",
   "properties": {
-    "credential_type": "assumed_role",
     "policy_arns": [
       "arn:aws:iam::aws:policy/AmazonS3FullAccess",
       "arn:aws:iam::aws:policy/AmazonSNSFullAccess",
@@ -189,6 +185,7 @@ DELETE /projects/<project_name>/targets/<target_name>
 Response Body
 
 ```
+
 ```
 
 ## Delete Project Token
@@ -198,6 +195,7 @@ DELETE /projects/<project_name>/tokens/<token_id>
 Response Body
 
 ```
+
 ```
 
 ## List Project Tokens
@@ -217,7 +215,7 @@ Response Body
     "created_at": "2022-06-21T14:43:16.172896-07:00",
     "expires_at": "2023-06-21T14:43:16.172896-07:00",
     "token_id": "def456"
-  },
+  }
 ]
 ```
 
@@ -230,13 +228,8 @@ Request Body
 ```json
 {
   "arguments": {
-    "execute": [
-      "-auto-approve",
-      "-no-color"
-    ],
-    "init": [
-      "-no-color"
-    ]
+    "execute": ["-auto-approve", "-no-color"],
+    "init": ["-no-color"]
   },
   "environment_variables": {
     "AWS_REGION": "us-west-2",
@@ -293,10 +286,10 @@ Response Body
 
 ```json
 {
-  "name":"workflow1",
-  "status":"failed",
-  "created":"1618515183",
-  "finished":"1618515193"
+  "name": "workflow1",
+  "status": "failed",
+  "created": "1618515183",
+  "finished": "1618515193"
 }
 ```
 
@@ -308,10 +301,7 @@ Response Body
 
 ```json
 {
-  "logs": [
-    "Log line 1",
-    "Log line 2"
-  ]
+  "logs": ["Log line 1", "Log line 2"]
 }
 ```
 
@@ -333,9 +323,18 @@ GET /projects/<project_name>/targets/<target_name>/workflows
 Response Body
 
 ```json
-
 [
-  {"name":"workflow1","status":"failed","created":"1618515183","finished":"1618515193"},
-  {"name":"workflow2","status":"failed","created":"1618512676","finished":"1618512686"}
+  {
+    "name": "workflow1",
+    "status": "failed",
+    "created": "1618515183",
+    "finished": "1618515193"
+  },
+  {
+    "name": "workflow2",
+    "status": "failed",
+    "created": "1618512676",
+    "finished": "1618512686"
+  }
 ]
 ```

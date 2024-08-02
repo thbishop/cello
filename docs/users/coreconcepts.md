@@ -19,9 +19,8 @@ A target represents a unique deployment for a project. It contains information r
 
 ### Properties
 
-| Name            | Description                                                            |
-| --------------- | ---------------------------------------------------------------------- |
-| credential_type | the type of credential mechanism to use. Currently only "assumed_role" |
-| role_arn        | the role that the service assumes                                      |
-| policy_arns     | A list of AWS policy ARNs to use for permissions scope limiting        |
-| policy_document | An inline document to scope down permissions                           |
+| Name            | Description                                                     |
+| --------------- | --------------------------------------------------------------- |
+| role_arn        | the role that the service assumes                               |
+| policy_arns     | A list of AWS policy ARNs to use for permissions scope limiting |
+| policy_document | An inline document to scope down permissions                    |

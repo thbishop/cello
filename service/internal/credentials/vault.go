@@ -245,15 +245,13 @@ func (v VaultProvider) CreateProject(name string) (types.Token, error) {
 }
 
 // CreateTarget creates a target for the project.
-// TODO validate policy and other information is correct in target
-// TODO Validate role exists (if possible, etc)
 func (v VaultProvider) CreateTarget(projectName string, target types.Target) error {
 	if !v.isAdmin() {
 		return errors.New("admin credentials must be used to create target")
 	}
 
 	options := map[string]interface{}{
-		"credential_type": target.Properties.CredentialType,
+		"credential_type": "assumed_role", // Default value
 		"policy_arns":     target.Properties.PolicyArns,
 		"policy_document": target.Properties.PolicyDocument,
 		"role_arns":       target.Properties.RoleArn,
@@ -291,7 +289,7 @@ func (v VaultProvider) DeleteProject(name string) error {
 	return nil
 }
 
-func (v VaultProvider) DeleteTarget(projectName string, targetName string) error {
+func (v VaultProvider) DeleteTarget(projectName, targetName string) error {
 	if !v.isAdmin() {
 		return errors.New("admin credentials must be used to delete target")
 	}
@@ -337,7 +335,6 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (types.Target, 
 
 	// These should always exist.
 	roleArn := sec.Data["role_arns"].([]interface{})[0].(string)
-	credentialType := sec.Data["credential_type"].(string)
 
 	// Optional.
 	policies := []string{}
@@ -358,7 +355,6 @@ func (v VaultProvider) GetTarget(projectName, targetName string) (types.Target, 
 		// target 'Type' always 'aws_account', currently not stored in Vault
 		Type: "aws_account",
 		Properties: types.TargetProperties{
-			CredentialType: credentialType,
 			PolicyArns:     policies,
 			PolicyDocument: policyDocument,
 			RoleArn:        roleArn,
@@ -519,7 +515,7 @@ func (v VaultProvider) UpdateTarget(projectName string, target types.Target) err
 	}
 
 	options := map[string]interface{}{
-		"credential_type": target.Properties.CredentialType,
+		"credential_type": "assumed_role", // Default value
 		"policy_arns":     target.Properties.PolicyArns,
 		"policy_document": target.Properties.PolicyDocument,
 		"role_arns":       target.Properties.RoleArn,

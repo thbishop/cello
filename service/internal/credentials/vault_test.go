@@ -394,7 +394,7 @@ func TestVaultGetTarget(t *testing.T) {
 					"role_arns":       []interface{}{"test-role-arn"},
 					"policy_arns":     []interface{}{"test-policy-arn"},
 					"policy_document": `{ "Version": "2012-10-17", "Statement": [ { "Effect": "Allow", "Action": "s3:ListBuckets", "Resource": "*" } ] }`,
-					"credential_type": "test-cred-type",
+					"credential_type": "assumed_role",
 				}},
 			}
 

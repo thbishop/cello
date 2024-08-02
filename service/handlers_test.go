@@ -317,7 +317,6 @@ func TestGetTarget(t *testing.T) {
 					return types.Target{
 						Name: "TARGET",
 						Properties: types.TargetProperties{
-							CredentialType: "assumed_role",
 							PolicyArns:     []string{"arn:aws:iam::012345678901:policy/test-policy"},
 							PolicyDocument: "{ \"Version\": \"2012-10-17\", \"Statement\": [ { \"Effect\": \"Allow\", \"Action\": \"s3:ListBuckets\", \"Resource\": \"*\" } ] }",
 							RoleArn:        "arn:aws:iam::012345678901:role/test-role",
@@ -626,7 +625,6 @@ func TestUpdateTarget(t *testing.T) {
 					return types.Target{
 						Name: "TARGET_EXISTS",
 						Properties: types.TargetProperties{
-							CredentialType: "assumed_role",
 							PolicyArns:     []string{},
 							PolicyDocument: "policyDoc",
 							RoleArn:        "roleARN",
@@ -658,31 +656,6 @@ func TestUpdateTarget(t *testing.T) {
 			method:     "PATCH",
 		},
 		{
-			name:       "fails to update target credential_type",
-			req:        loadJSON(t, "TestUpdateTarget/fails_to_update_credential_type_request.json"),
-			want:       http.StatusBadRequest,
-			respFile:   "TestUpdateTarget/fails_to_update_credential_type_response.json",
-			authHeader: adminAuthHeader,
-			url:        "/projects/projectalreadyexists/targets/TARGET_EXISTS",
-			method:     "PATCH",
-			cpMock: &th.CredsProviderMock{
-				GetTargetFunc: func(s1, s2 string) (types.Target, error) {
-					return types.Target{
-						Name: "TARGET_EXISTS",
-						Properties: types.TargetProperties{
-							CredentialType: "assumed_role",
-							PolicyArns:     []string{"arn:aws:iam::012345678901:policy/test-policy"},
-							PolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"s3:ListBuckets\",\"Resource\":\"*\"}]}",
-							RoleArn:        "arn:aws:iam::012345678901:role/test-role",
-						},
-						Type: "aws_account",
-					}, nil
-				},
-				ProjectExistsFunc: func(s string) (bool, error) { return true, nil },
-				TargetExistsFunc:  func(s1, s2 string) (bool, error) { return true, nil },
-			},
-		},
-		{
 			name:       "does not overwrite target name or type when in request",
 			req:        loadJSON(t, "TestUpdateTarget/fails_to_update_target_name_request.json"),
 			want:       http.StatusOK,
@@ -695,7 +668,6 @@ func TestUpdateTarget(t *testing.T) {
 					return types.Target{
 						Name: "TARGET_EXISTS",
 						Properties: types.TargetProperties{
-							CredentialType: "assumed_role",
 							PolicyArns:     []string{"arn:aws:iam::012345678901:policy/test-policy"},
 							PolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":\"s3:ListBuckets\",\"Resource\":\"*\"}]}",
 							RoleArn:        "arn:aws:iam::012345678901:role/test-role",
