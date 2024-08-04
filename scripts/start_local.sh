@@ -22,6 +22,10 @@ if [ -z "$CELLO_DB_PASSWORD" ]; then
     export CELLO_DB_PASSWORD=1234
 fi
 
+if [ -z "$CELLO_DB_OPTIONS" ]; then
+    export CELLO_DB_OPTIONS="timezone=UTC"
+fi
+
 if [ -z "$CELLO_GIT_AUTH_METHOD" ]; then
     export CELLO_GIT_AUTH_METHOD=https
 fi

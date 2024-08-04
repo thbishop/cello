@@ -23,11 +23,17 @@ var _ db.Client = &DBClientMock{}
 //			CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
 //				panic("mock out the CreateProjectEntry method")
 //			},
+//			CreateTargetEntryFunc: func(ctx context.Context, project string, target types.Target) error {
+//				panic("mock out the CreateTargetEntry method")
+//			},
 //			CreateTokenEntryFunc: func(ctx context.Context, token types.Token) error {
 //				panic("mock out the CreateTokenEntry method")
 //			},
 //			DeleteProjectEntryFunc: func(ctx context.Context, project string) error {
 //				panic("mock out the DeleteProjectEntry method")
+//			},
+//			DeleteTargetEntryFunc: func(ctx context.Context, project string, targetName string) error {
+//				panic("mock out the DeleteTargetEntry method")
 //			},
 //			DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
 //				panic("mock out the DeleteTokenEntry method")
@@ -35,14 +41,26 @@ var _ db.Client = &DBClientMock{}
 //			HealthFunc: func(ctx context.Context) error {
 //				panic("mock out the Health method")
 //			},
+//			ListTargetEntriesFunc: func(ctx context.Context, project string) ([]db.TargetEntry, error) {
+//				panic("mock out the ListTargetEntries method")
+//			},
 //			ListTokenEntriesFunc: func(ctx context.Context, project string) ([]db.TokenEntry, error) {
 //				panic("mock out the ListTokenEntries method")
 //			},
 //			ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 //				panic("mock out the ReadProjectEntry method")
 //			},
+//			ReadTargetEntryFunc: func(ctx context.Context, project string, targetName string) (db.TargetEntry, error) {
+//				panic("mock out the ReadTargetEntry method")
+//			},
 //			ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
 //				panic("mock out the ReadTokenEntry method")
+//			},
+//			UpdateTargetEntryFunc: func(ctx context.Context, project string, target types.Target) error {
+//				panic("mock out the UpdateTargetEntry method")
+//			},
+//			UpsertTargetEntryFunc: func(ctx context.Context, project string, target types.Target) error {
+//				panic("mock out the UpsertTargetEntry method")
 //			},
 //		}
 //
@@ -54,11 +72,17 @@ type DBClientMock struct {
 	// CreateProjectEntryFunc mocks the CreateProjectEntry method.
 	CreateProjectEntryFunc func(ctx context.Context, pe db.ProjectEntry) error
 
+	// CreateTargetEntryFunc mocks the CreateTargetEntry method.
+	CreateTargetEntryFunc func(ctx context.Context, project string, target types.Target) error
+
 	// CreateTokenEntryFunc mocks the CreateTokenEntry method.
 	CreateTokenEntryFunc func(ctx context.Context, token types.Token) error
 
 	// DeleteProjectEntryFunc mocks the DeleteProjectEntry method.
 	DeleteProjectEntryFunc func(ctx context.Context, project string) error
+
+	// DeleteTargetEntryFunc mocks the DeleteTargetEntry method.
+	DeleteTargetEntryFunc func(ctx context.Context, project string, targetName string) error
 
 	// DeleteTokenEntryFunc mocks the DeleteTokenEntry method.
 	DeleteTokenEntryFunc func(ctx context.Context, token string) error
@@ -66,14 +90,26 @@ type DBClientMock struct {
 	// HealthFunc mocks the Health method.
 	HealthFunc func(ctx context.Context) error
 
+	// ListTargetEntriesFunc mocks the ListTargetEntries method.
+	ListTargetEntriesFunc func(ctx context.Context, project string) ([]db.TargetEntry, error)
+
 	// ListTokenEntriesFunc mocks the ListTokenEntries method.
 	ListTokenEntriesFunc func(ctx context.Context, project string) ([]db.TokenEntry, error)
 
 	// ReadProjectEntryFunc mocks the ReadProjectEntry method.
 	ReadProjectEntryFunc func(ctx context.Context, project string) (db.ProjectEntry, error)
 
+	// ReadTargetEntryFunc mocks the ReadTargetEntry method.
+	ReadTargetEntryFunc func(ctx context.Context, project string, targetName string) (db.TargetEntry, error)
+
 	// ReadTokenEntryFunc mocks the ReadTokenEntry method.
 	ReadTokenEntryFunc func(ctx context.Context, token string) (db.TokenEntry, error)
+
+	// UpdateTargetEntryFunc mocks the UpdateTargetEntry method.
+	UpdateTargetEntryFunc func(ctx context.Context, project string, target types.Target) error
+
+	// UpsertTargetEntryFunc mocks the UpsertTargetEntry method.
+	UpsertTargetEntryFunc func(ctx context.Context, project string, target types.Target) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -83,6 +119,15 @@ type DBClientMock struct {
 			Ctx context.Context
 			// Pe is the pe argument value.
 			Pe db.ProjectEntry
+		}
+		// CreateTargetEntry holds details about calls to the CreateTargetEntry method.
+		CreateTargetEntry []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Project is the project argument value.
+			Project string
+			// Target is the target argument value.
+			Target types.Target
 		}
 		// CreateTokenEntry holds details about calls to the CreateTokenEntry method.
 		CreateTokenEntry []struct {
@@ -98,6 +143,15 @@ type DBClientMock struct {
 			// Project is the project argument value.
 			Project string
 		}
+		// DeleteTargetEntry holds details about calls to the DeleteTargetEntry method.
+		DeleteTargetEntry []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Project is the project argument value.
+			Project string
+			// TargetName is the targetName argument value.
+			TargetName string
+		}
 		// DeleteTokenEntry holds details about calls to the DeleteTokenEntry method.
 		DeleteTokenEntry []struct {
 			// Ctx is the ctx argument value.
@@ -109,6 +163,13 @@ type DBClientMock struct {
 		Health []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
+		}
+		// ListTargetEntries holds details about calls to the ListTargetEntries method.
+		ListTargetEntries []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Project is the project argument value.
+			Project string
 		}
 		// ListTokenEntries holds details about calls to the ListTokenEntries method.
 		ListTokenEntries []struct {
@@ -124,6 +185,15 @@ type DBClientMock struct {
 			// Project is the project argument value.
 			Project string
 		}
+		// ReadTargetEntry holds details about calls to the ReadTargetEntry method.
+		ReadTargetEntry []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Project is the project argument value.
+			Project string
+			// TargetName is the targetName argument value.
+			TargetName string
+		}
 		// ReadTokenEntry holds details about calls to the ReadTokenEntry method.
 		ReadTokenEntry []struct {
 			// Ctx is the ctx argument value.
@@ -131,15 +201,39 @@ type DBClientMock struct {
 			// Token is the token argument value.
 			Token string
 		}
+		// UpdateTargetEntry holds details about calls to the UpdateTargetEntry method.
+		UpdateTargetEntry []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Project is the project argument value.
+			Project string
+			// Target is the target argument value.
+			Target types.Target
+		}
+		// UpsertTargetEntry holds details about calls to the UpsertTargetEntry method.
+		UpsertTargetEntry []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Project is the project argument value.
+			Project string
+			// Target is the target argument value.
+			Target types.Target
+		}
 	}
 	lockCreateProjectEntry sync.RWMutex
+	lockCreateTargetEntry  sync.RWMutex
 	lockCreateTokenEntry   sync.RWMutex
 	lockDeleteProjectEntry sync.RWMutex
+	lockDeleteTargetEntry  sync.RWMutex
 	lockDeleteTokenEntry   sync.RWMutex
 	lockHealth             sync.RWMutex
+	lockListTargetEntries  sync.RWMutex
 	lockListTokenEntries   sync.RWMutex
 	lockReadProjectEntry   sync.RWMutex
+	lockReadTargetEntry    sync.RWMutex
 	lockReadTokenEntry     sync.RWMutex
+	lockUpdateTargetEntry  sync.RWMutex
+	lockUpsertTargetEntry  sync.RWMutex
 }
 
 // CreateProjectEntry calls CreateProjectEntryFunc.
@@ -175,6 +269,46 @@ func (mock *DBClientMock) CreateProjectEntryCalls() []struct {
 	mock.lockCreateProjectEntry.RLock()
 	calls = mock.calls.CreateProjectEntry
 	mock.lockCreateProjectEntry.RUnlock()
+	return calls
+}
+
+// CreateTargetEntry calls CreateTargetEntryFunc.
+func (mock *DBClientMock) CreateTargetEntry(ctx context.Context, project string, target types.Target) error {
+	if mock.CreateTargetEntryFunc == nil {
+		panic("DBClientMock.CreateTargetEntryFunc: method is nil but Client.CreateTargetEntry was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		Project string
+		Target  types.Target
+	}{
+		Ctx:     ctx,
+		Project: project,
+		Target:  target,
+	}
+	mock.lockCreateTargetEntry.Lock()
+	mock.calls.CreateTargetEntry = append(mock.calls.CreateTargetEntry, callInfo)
+	mock.lockCreateTargetEntry.Unlock()
+	return mock.CreateTargetEntryFunc(ctx, project, target)
+}
+
+// CreateTargetEntryCalls gets all the calls that were made to CreateTargetEntry.
+// Check the length with:
+//
+//	len(mockedClient.CreateTargetEntryCalls())
+func (mock *DBClientMock) CreateTargetEntryCalls() []struct {
+	Ctx     context.Context
+	Project string
+	Target  types.Target
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Project string
+		Target  types.Target
+	}
+	mock.lockCreateTargetEntry.RLock()
+	calls = mock.calls.CreateTargetEntry
+	mock.lockCreateTargetEntry.RUnlock()
 	return calls
 }
 
@@ -250,6 +384,46 @@ func (mock *DBClientMock) DeleteProjectEntryCalls() []struct {
 	return calls
 }
 
+// DeleteTargetEntry calls DeleteTargetEntryFunc.
+func (mock *DBClientMock) DeleteTargetEntry(ctx context.Context, project string, targetName string) error {
+	if mock.DeleteTargetEntryFunc == nil {
+		panic("DBClientMock.DeleteTargetEntryFunc: method is nil but Client.DeleteTargetEntry was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		Project    string
+		TargetName string
+	}{
+		Ctx:        ctx,
+		Project:    project,
+		TargetName: targetName,
+	}
+	mock.lockDeleteTargetEntry.Lock()
+	mock.calls.DeleteTargetEntry = append(mock.calls.DeleteTargetEntry, callInfo)
+	mock.lockDeleteTargetEntry.Unlock()
+	return mock.DeleteTargetEntryFunc(ctx, project, targetName)
+}
+
+// DeleteTargetEntryCalls gets all the calls that were made to DeleteTargetEntry.
+// Check the length with:
+//
+//	len(mockedClient.DeleteTargetEntryCalls())
+func (mock *DBClientMock) DeleteTargetEntryCalls() []struct {
+	Ctx        context.Context
+	Project    string
+	TargetName string
+} {
+	var calls []struct {
+		Ctx        context.Context
+		Project    string
+		TargetName string
+	}
+	mock.lockDeleteTargetEntry.RLock()
+	calls = mock.calls.DeleteTargetEntry
+	mock.lockDeleteTargetEntry.RUnlock()
+	return calls
+}
+
 // DeleteTokenEntry calls DeleteTokenEntryFunc.
 func (mock *DBClientMock) DeleteTokenEntry(ctx context.Context, token string) error {
 	if mock.DeleteTokenEntryFunc == nil {
@@ -315,6 +489,42 @@ func (mock *DBClientMock) HealthCalls() []struct {
 	mock.lockHealth.RLock()
 	calls = mock.calls.Health
 	mock.lockHealth.RUnlock()
+	return calls
+}
+
+// ListTargetEntries calls ListTargetEntriesFunc.
+func (mock *DBClientMock) ListTargetEntries(ctx context.Context, project string) ([]db.TargetEntry, error) {
+	if mock.ListTargetEntriesFunc == nil {
+		panic("DBClientMock.ListTargetEntriesFunc: method is nil but Client.ListTargetEntries was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		Project string
+	}{
+		Ctx:     ctx,
+		Project: project,
+	}
+	mock.lockListTargetEntries.Lock()
+	mock.calls.ListTargetEntries = append(mock.calls.ListTargetEntries, callInfo)
+	mock.lockListTargetEntries.Unlock()
+	return mock.ListTargetEntriesFunc(ctx, project)
+}
+
+// ListTargetEntriesCalls gets all the calls that were made to ListTargetEntries.
+// Check the length with:
+//
+//	len(mockedClient.ListTargetEntriesCalls())
+func (mock *DBClientMock) ListTargetEntriesCalls() []struct {
+	Ctx     context.Context
+	Project string
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Project string
+	}
+	mock.lockListTargetEntries.RLock()
+	calls = mock.calls.ListTargetEntries
+	mock.lockListTargetEntries.RUnlock()
 	return calls
 }
 
@@ -390,6 +600,46 @@ func (mock *DBClientMock) ReadProjectEntryCalls() []struct {
 	return calls
 }
 
+// ReadTargetEntry calls ReadTargetEntryFunc.
+func (mock *DBClientMock) ReadTargetEntry(ctx context.Context, project string, targetName string) (db.TargetEntry, error) {
+	if mock.ReadTargetEntryFunc == nil {
+		panic("DBClientMock.ReadTargetEntryFunc: method is nil but Client.ReadTargetEntry was just called")
+	}
+	callInfo := struct {
+		Ctx        context.Context
+		Project    string
+		TargetName string
+	}{
+		Ctx:        ctx,
+		Project:    project,
+		TargetName: targetName,
+	}
+	mock.lockReadTargetEntry.Lock()
+	mock.calls.ReadTargetEntry = append(mock.calls.ReadTargetEntry, callInfo)
+	mock.lockReadTargetEntry.Unlock()
+	return mock.ReadTargetEntryFunc(ctx, project, targetName)
+}
+
+// ReadTargetEntryCalls gets all the calls that were made to ReadTargetEntry.
+// Check the length with:
+//
+//	len(mockedClient.ReadTargetEntryCalls())
+func (mock *DBClientMock) ReadTargetEntryCalls() []struct {
+	Ctx        context.Context
+	Project    string
+	TargetName string
+} {
+	var calls []struct {
+		Ctx        context.Context
+		Project    string
+		TargetName string
+	}
+	mock.lockReadTargetEntry.RLock()
+	calls = mock.calls.ReadTargetEntry
+	mock.lockReadTargetEntry.RUnlock()
+	return calls
+}
+
 // ReadTokenEntry calls ReadTokenEntryFunc.
 func (mock *DBClientMock) ReadTokenEntry(ctx context.Context, token string) (db.TokenEntry, error) {
 	if mock.ReadTokenEntryFunc == nil {
@@ -423,5 +673,85 @@ func (mock *DBClientMock) ReadTokenEntryCalls() []struct {
 	mock.lockReadTokenEntry.RLock()
 	calls = mock.calls.ReadTokenEntry
 	mock.lockReadTokenEntry.RUnlock()
+	return calls
+}
+
+// UpdateTargetEntry calls UpdateTargetEntryFunc.
+func (mock *DBClientMock) UpdateTargetEntry(ctx context.Context, project string, target types.Target) error {
+	if mock.UpdateTargetEntryFunc == nil {
+		panic("DBClientMock.UpdateTargetEntryFunc: method is nil but Client.UpdateTargetEntry was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		Project string
+		Target  types.Target
+	}{
+		Ctx:     ctx,
+		Project: project,
+		Target:  target,
+	}
+	mock.lockUpdateTargetEntry.Lock()
+	mock.calls.UpdateTargetEntry = append(mock.calls.UpdateTargetEntry, callInfo)
+	mock.lockUpdateTargetEntry.Unlock()
+	return mock.UpdateTargetEntryFunc(ctx, project, target)
+}
+
+// UpdateTargetEntryCalls gets all the calls that were made to UpdateTargetEntry.
+// Check the length with:
+//
+//	len(mockedClient.UpdateTargetEntryCalls())
+func (mock *DBClientMock) UpdateTargetEntryCalls() []struct {
+	Ctx     context.Context
+	Project string
+	Target  types.Target
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Project string
+		Target  types.Target
+	}
+	mock.lockUpdateTargetEntry.RLock()
+	calls = mock.calls.UpdateTargetEntry
+	mock.lockUpdateTargetEntry.RUnlock()
+	return calls
+}
+
+// UpsertTargetEntry calls UpsertTargetEntryFunc.
+func (mock *DBClientMock) UpsertTargetEntry(ctx context.Context, project string, target types.Target) error {
+	if mock.UpsertTargetEntryFunc == nil {
+		panic("DBClientMock.UpsertTargetEntryFunc: method is nil but Client.UpsertTargetEntry was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		Project string
+		Target  types.Target
+	}{
+		Ctx:     ctx,
+		Project: project,
+		Target:  target,
+	}
+	mock.lockUpsertTargetEntry.Lock()
+	mock.calls.UpsertTargetEntry = append(mock.calls.UpsertTargetEntry, callInfo)
+	mock.lockUpsertTargetEntry.Unlock()
+	return mock.UpsertTargetEntryFunc(ctx, project, target)
+}
+
+// UpsertTargetEntryCalls gets all the calls that were made to UpsertTargetEntry.
+// Check the length with:
+//
+//	len(mockedClient.UpsertTargetEntryCalls())
+func (mock *DBClientMock) UpsertTargetEntryCalls() []struct {
+	Ctx     context.Context
+	Project string
+	Target  types.Target
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Project string
+		Target  types.Target
+	}
+	mock.lockUpsertTargetEntry.RLock()
+	calls = mock.calls.UpsertTargetEntry
+	mock.lockUpsertTargetEntry.RUnlock()
 	return calls
 }

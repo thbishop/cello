@@ -61,6 +61,14 @@ type handler struct {
 	dbClient               db.Client
 }
 
+type persistOp string
+
+const (
+	persistOpCreate persistOp = "create"
+	persistOpDelete persistOp = "delete"
+	persistOpUpdate persistOp = "update"
+)
+
 // Service HealthCheck
 func (h *handler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	vaultEndpoint := fmt.Sprintf("%s/v1/sys/health", h.env.VaultAddress)
@@ -753,6 +761,31 @@ func (h handler) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h handler) persistTarget(logger log.Logger, op persistOp, projectName string, target types.Target) {
+	l := log.With(logger, "persist-target", op)
+
+	ctx := context.Background()
+
+	level.Info(l).Log("message", "starting")
+	var err error
+	switch op {
+	// This will let us backfill in the case that we never saw the create, but
+	// received an update.
+	case persistOpCreate, persistOpUpdate:
+		err = h.dbClient.UpsertTargetEntry(ctx, projectName, target)
+	case persistOpDelete:
+		err = h.dbClient.DeleteTargetEntry(ctx, projectName, target.Name)
+	default:
+		level.Error(l).Log("message", "unknown op passed")
+	}
+
+	if err != nil {
+		level.Error(l).Log("error", err)
+	}
+
+	level.Info(l).Log("message", "done")
+}
+
 // Creates a target
 func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -833,6 +866,9 @@ func (h handler) createTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error creating target", http.StatusInternalServerError)
 		return
 	}
+
+	h.persistTarget(l, persistOpCreate, projectName, types.Target(ctr))
+
 	fmt.Fprint(w, "{}")
 }
 
@@ -871,6 +907,8 @@ func (h handler) deleteTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error deleting target", http.StatusInternalServerError)
 		return
 	}
+
+	h.persistTarget(l, persistOpDelete, projectName, types.Target{Name: targetName})
 }
 
 // Lists the targets for a project
@@ -1023,6 +1061,8 @@ func (h handler) updateTarget(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, "error updating target", http.StatusInternalServerError)
 		return
 	}
+
+	h.persistTarget(l, persistOpUpdate, projectName, target)
 
 	data, err := json.Marshal(target)
 	if err != nil {
