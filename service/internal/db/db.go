@@ -44,6 +44,7 @@ type Client interface {
 	DeleteProjectEntry(ctx context.Context, project string) error
 	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 	CreateTargetEntry(ctx context.Context, project string, target types.Target) error
+	CreateIfMissingTargetEntry(ctx context.Context, project string, target types.Target) error
 	DeleteTargetEntry(ctx context.Context, project, targetName string) error
 	ListTargetEntries(ctx context.Context, project string) ([]TargetEntry, error)
 	ReadTargetEntry(ctx context.Context, project, targetName string) (TargetEntry, error)
@@ -228,6 +229,18 @@ func (d SQLClient) CreateTargetEntry(ctx context.Context, project string, target
 		}
 		return nil
 	})
+}
+
+func (d SQLClient) CreateIfMissingTargetEntry(ctx context.Context, project string, target types.Target) error {
+	// See if it exists
+	if _, err := d.ReadTargetEntry(ctx, project, target.Name); err != nil {
+		// Doesn't exist, create
+		if err == db.ErrNoMoreRows {
+			return d.CreateTargetEntry(ctx, project, target)
+		}
+		return err
+	}
+	return nil
 }
 
 func (d SQLClient) ReadTargetEntry(ctx context.Context, project, targetName string) (TargetEntry, error) {

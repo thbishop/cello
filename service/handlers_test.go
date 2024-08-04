@@ -326,6 +326,9 @@ func TestGetTarget(t *testing.T) {
 				},
 				TargetExistsFunc: func(s1, s2 string) (bool, error) { return true, nil },
 			},
+			dbMock: &th.DBClientMock{
+				CreateIfMissingTargetEntryFunc: func(ctx context.Context, project string, target types.Target) error { return nil },
+			},
 		},
 		{
 			name:       "target does not exist",

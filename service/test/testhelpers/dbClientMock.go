@@ -20,6 +20,9 @@ var _ db.Client = &DBClientMock{}
 //
 //		// make and configure a mocked db.Client
 //		mockedClient := &DBClientMock{
+//			CreateIfMissingTargetEntryFunc: func(ctx context.Context, project string, target types.Target) error {
+//				panic("mock out the CreateIfMissingTargetEntry method")
+//			},
 //			CreateProjectEntryFunc: func(ctx context.Context, pe db.ProjectEntry) error {
 //				panic("mock out the CreateProjectEntry method")
 //			},
@@ -69,6 +72,9 @@ var _ db.Client = &DBClientMock{}
 //
 //	}
 type DBClientMock struct {
+	// CreateIfMissingTargetEntryFunc mocks the CreateIfMissingTargetEntry method.
+	CreateIfMissingTargetEntryFunc func(ctx context.Context, project string, target types.Target) error
+
 	// CreateProjectEntryFunc mocks the CreateProjectEntry method.
 	CreateProjectEntryFunc func(ctx context.Context, pe db.ProjectEntry) error
 
@@ -113,6 +119,15 @@ type DBClientMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// CreateIfMissingTargetEntry holds details about calls to the CreateIfMissingTargetEntry method.
+		CreateIfMissingTargetEntry []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Project is the project argument value.
+			Project string
+			// Target is the target argument value.
+			Target types.Target
+		}
 		// CreateProjectEntry holds details about calls to the CreateProjectEntry method.
 		CreateProjectEntry []struct {
 			// Ctx is the ctx argument value.
@@ -220,20 +235,61 @@ type DBClientMock struct {
 			Target types.Target
 		}
 	}
-	lockCreateProjectEntry sync.RWMutex
-	lockCreateTargetEntry  sync.RWMutex
-	lockCreateTokenEntry   sync.RWMutex
-	lockDeleteProjectEntry sync.RWMutex
-	lockDeleteTargetEntry  sync.RWMutex
-	lockDeleteTokenEntry   sync.RWMutex
-	lockHealth             sync.RWMutex
-	lockListTargetEntries  sync.RWMutex
-	lockListTokenEntries   sync.RWMutex
-	lockReadProjectEntry   sync.RWMutex
-	lockReadTargetEntry    sync.RWMutex
-	lockReadTokenEntry     sync.RWMutex
-	lockUpdateTargetEntry  sync.RWMutex
-	lockUpsertTargetEntry  sync.RWMutex
+	lockCreateIfMissingTargetEntry sync.RWMutex
+	lockCreateProjectEntry         sync.RWMutex
+	lockCreateTargetEntry          sync.RWMutex
+	lockCreateTokenEntry           sync.RWMutex
+	lockDeleteProjectEntry         sync.RWMutex
+	lockDeleteTargetEntry          sync.RWMutex
+	lockDeleteTokenEntry           sync.RWMutex
+	lockHealth                     sync.RWMutex
+	lockListTargetEntries          sync.RWMutex
+	lockListTokenEntries           sync.RWMutex
+	lockReadProjectEntry           sync.RWMutex
+	lockReadTargetEntry            sync.RWMutex
+	lockReadTokenEntry             sync.RWMutex
+	lockUpdateTargetEntry          sync.RWMutex
+	lockUpsertTargetEntry          sync.RWMutex
+}
+
+// CreateIfMissingTargetEntry calls CreateIfMissingTargetEntryFunc.
+func (mock *DBClientMock) CreateIfMissingTargetEntry(ctx context.Context, project string, target types.Target) error {
+	if mock.CreateIfMissingTargetEntryFunc == nil {
+		panic("DBClientMock.CreateIfMissingTargetEntryFunc: method is nil but Client.CreateIfMissingTargetEntry was just called")
+	}
+	callInfo := struct {
+		Ctx     context.Context
+		Project string
+		Target  types.Target
+	}{
+		Ctx:     ctx,
+		Project: project,
+		Target:  target,
+	}
+	mock.lockCreateIfMissingTargetEntry.Lock()
+	mock.calls.CreateIfMissingTargetEntry = append(mock.calls.CreateIfMissingTargetEntry, callInfo)
+	mock.lockCreateIfMissingTargetEntry.Unlock()
+	return mock.CreateIfMissingTargetEntryFunc(ctx, project, target)
+}
+
+// CreateIfMissingTargetEntryCalls gets all the calls that were made to CreateIfMissingTargetEntry.
+// Check the length with:
+//
+//	len(mockedClient.CreateIfMissingTargetEntryCalls())
+func (mock *DBClientMock) CreateIfMissingTargetEntryCalls() []struct {
+	Ctx     context.Context
+	Project string
+	Target  types.Target
+} {
+	var calls []struct {
+		Ctx     context.Context
+		Project string
+		Target  types.Target
+	}
+	mock.lockCreateIfMissingTargetEntry.RLock()
+	calls = mock.calls.CreateIfMissingTargetEntry
+	mock.lockCreateIfMissingTargetEntry.RUnlock()
+	return calls
 }
 
 // CreateProjectEntry calls CreateProjectEntryFunc.

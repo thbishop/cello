@@ -64,9 +64,10 @@ type handler struct {
 type persistOp string
 
 const (
-	persistOpCreate persistOp = "create"
-	persistOpDelete persistOp = "delete"
-	persistOpUpdate persistOp = "update"
+	persistOpCreate          persistOp = "create"
+	persistOpCreateIfMissing persistOp = "create-if-missing"
+	persistOpDelete          persistOp = "delete"
+	persistOpUpdate          persistOp = "update"
 )
 
 // Service HealthCheck
@@ -461,6 +462,8 @@ func (h handler) getTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.persistTarget(l, persistOpCreateIfMissing, projectName, targetInfo)
+
 	fmt.Fprint(w, string(jsonResult))
 }
 
@@ -773,6 +776,8 @@ func (h handler) persistTarget(logger log.Logger, op persistOp, projectName stri
 	// received an update.
 	case persistOpCreate, persistOpUpdate:
 		err = h.dbClient.UpsertTargetEntry(ctx, projectName, target)
+	case persistOpCreateIfMissing:
+		err = h.dbClient.CreateIfMissingTargetEntry(ctx, projectName, target)
 	case persistOpDelete:
 		err = h.dbClient.DeleteTargetEntry(ctx, projectName, target.Name)
 	default:
