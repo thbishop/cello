@@ -4,23 +4,28 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cello-proj/cello/internal/types"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	dynamodbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/upper/db/v4"
 	"github.com/upper/db/v4/adapter/postgresql"
 )
 
 type ProjectEntry struct {
-	ProjectID  string `db:"project"`
-	Repository string `db:"repository"`
+	ProjectID  string `db:"project" dynamodbav:"pk"`
+	Repository string `db:"repository" dynamodbav:"repository"`
 }
 
 type TokenEntry struct {
-	CreatedAt string `db:"created_at"`
-	ExpiresAt string `db:"expires_at"`
-	ProjectID string `db:"project"`
-	TokenID   string `db:"token_id"`
+	CreatedAt string `db:"created_at" dynamodbav:"created_at"`
+	ExpiresAt string `db:"expires_at" dynamodbav:"expires_at"`
+	ProjectID string `db:"project" dynamodbav:"-"` // ignore in ddb as it's in pk
+	TokenID   string `db:"token_id" dynamodbav:"token_id"`
 }
 
 // IsEmpty returns whether a struct is empty.
@@ -186,4 +191,170 @@ func (d SQLClient) ListTokenEntries(ctx context.Context, project string) ([]Toke
 
 	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("project", project).OrderBy("-created_at").All(&res)
 	return res, err
+}
+
+// DDBClient allows for db crud operations using DynamoDB
+type DDBClient struct {
+	client    *dynamodb.Client
+	tableName string
+}
+
+func NewDynamoDBClient(client *dynamodb.Client, tableName string) *DDBClient {
+	return &DDBClient{
+		client:    client,
+		tableName: tableName,
+	}
+}
+
+func (d *DDBClient) Health(ctx context.Context) error {
+	// No-op as we don't want to incur AWS API costs just for health checks
+	return nil
+}
+
+func (d *DDBClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) error {
+	item, err := attributevalue.MarshalMap(pe)
+	if err != nil {
+		return fmt.Errorf("failed to marshal project entry: %w", err)
+	}
+
+	item["pk"] = &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", pe.ProjectID)}
+	item["sk"] = &dynamodbtypes.AttributeValueMemberS{Value: "META"}
+
+	_, err = d.client.PutItem(ctx, &dynamodb.PutItemInput{
+		TableName: aws.String(d.tableName),
+		Item:      item,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create project entry: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DDBClient) ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error) {
+	result, err := d.client.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(d.tableName),
+		Key: map[string]dynamodbtypes.AttributeValue{
+			"pk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
+			"sk": &dynamodbtypes.AttributeValueMemberS{Value: "META"},
+		},
+	})
+	if err != nil {
+		return ProjectEntry{}, fmt.Errorf("failed to get project entry: %w", err)
+	}
+
+	if result.Item == nil {
+		return ProjectEntry{}, fmt.Errorf("project not found")
+	}
+
+	var pe ProjectEntry
+	if err = attributevalue.UnmarshalMap(result.Item, &pe); err != nil {
+		return ProjectEntry{}, fmt.Errorf("failed to unmarshal project entry: %w", err)
+	}
+
+	return pe, nil
+}
+
+func (d *DDBClient) DeleteProjectEntry(ctx context.Context, project string) error {
+	_, err := d.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+		TableName: aws.String(d.tableName),
+		Key: map[string]dynamodbtypes.AttributeValue{
+			"pk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
+			"sk": &dynamodbtypes.AttributeValueMemberS{Value: "META"},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete project entry: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DDBClient) CreateTokenEntry(ctx context.Context, token types.Token) error {
+	te := TokenEntry{
+		CreatedAt: token.CreatedAt,
+		ExpiresAt: token.ExpiresAt,
+		ProjectID: token.ProjectID,
+		TokenID:   token.ProjectToken.ID,
+	}
+
+	item, err := attributevalue.MarshalMap(te)
+	if err != nil {
+		return fmt.Errorf("failed to marshal token entry: %w", err)
+	}
+
+	// Add PK and SK for token entry
+	item["pk"] = &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", token.ProjectID)}
+	item["sk"] = &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("TOKEN#%s", token.ProjectToken.ID)}
+
+	_, err = d.client.PutItem(ctx, &dynamodb.PutItemInput{
+		TableName: aws.String(d.tableName),
+		Item:      item,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create token entry: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DDBClient) ReadTokenEntry(ctx context.Context, project, token string) (TokenEntry, error) {
+	result, err := d.client.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: aws.String(d.tableName),
+		Key: map[string]dynamodbtypes.AttributeValue{
+			"pk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
+			"sk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("TOKEN#%s", token)},
+		},
+	})
+	if err != nil {
+		return TokenEntry{}, fmt.Errorf("failed to get token entry: %w", err)
+	}
+
+	if result.Item == nil {
+		return TokenEntry{}, fmt.Errorf("token not found")
+	}
+
+	var te TokenEntry
+	if err = attributevalue.UnmarshalMap(result.Item, &te); err != nil {
+		return TokenEntry{}, fmt.Errorf("failed to unmarshal token entry: %w", err)
+	}
+
+	return te, nil
+}
+
+func (d *DDBClient) DeleteTokenEntry(ctx context.Context, project, token string) error {
+	_, err := d.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
+		TableName: aws.String(d.tableName),
+		Key: map[string]dynamodbtypes.AttributeValue{
+			"pk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
+			"sk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("TOKEN#%s", token)},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete token entry: %w", err)
+	}
+
+	return nil
+}
+
+func (d *DDBClient) ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error) {
+	result, err := d.client.Query(ctx, &dynamodb.QueryInput{
+		TableName:              aws.String(d.tableName),
+		KeyConditionExpression: aws.String("pk = :project AND begins_with(sk, :token_prefix)"),
+		ExpressionAttributeValues: map[string]dynamodbtypes.AttributeValue{
+			":project":      &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
+			":token_prefix": &dynamodbtypes.AttributeValueMemberS{Value: "TOKEN#"},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query token entries: %w", err)
+	}
+
+	var entries []TokenEntry
+	err = attributevalue.UnmarshalListOfMaps(result.Items, &entries)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal token entries: %w", err)
+	}
+
+	return entries, nil
 }
