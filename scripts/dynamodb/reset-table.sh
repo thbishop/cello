@@ -20,15 +20,15 @@ sleep 2
 aws dynamodb create-table \
   --table-name cello \
   --attribute-definitions \
-    AttributeName=PK,AttributeType=S \
-    AttributeName=SK,AttributeType=S \
+    AttributeName=pk,AttributeType=S \
+    AttributeName=sk,AttributeType=S \
   --key-schema \
-    AttributeName=PK,KeyType=HASH \
-    AttributeName=SK,KeyType=RANGE \
+    AttributeName=pk,KeyType=HASH \
+    AttributeName=sk,KeyType=RANGE \
   --billing-mode PAY_PER_REQUEST \
   --endpoint-url $DYNAMODB_ENDPOINT
 
 # Wait for table creation to complete
 sleep 2
 
-echo "Table 'cello' has been reset successfully" 
+echo "Table 'cello' has been reset successfully"
