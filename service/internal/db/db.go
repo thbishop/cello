@@ -57,6 +57,12 @@ type SQLClient struct {
 const (
 	ProjectEntryDB = "projects"
 	TokenEntryDB   = "tokens"
+
+	ddbPrimaryKey   = "pk"
+	ddbSortKey      = "sk"
+	ddbProjectPKFmt = "PROJECT#%s"
+	ddbTokenSKFmt   = "TOKEN#%s"
+	ddbMetaSK       = "META"
 )
 
 func NewSQLClient(host, database, user, password string, options map[string]string) (SQLClient, error) {
@@ -212,15 +218,11 @@ func (d *DDBClient) Health(ctx context.Context) error {
 }
 
 func (d *DDBClient) CreateProjectEntry(ctx context.Context, pe ProjectEntry) error {
-	item, err := attributevalue.MarshalMap(pe)
-	if err != nil {
-		return fmt.Errorf("failed to marshal project entry: %w", err)
-	}
+	item := make(map[string]dynamodbtypes.AttributeValue)
+	item[ddbPrimaryKey] = &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf(ddbProjectPKFmt, pe.ProjectID)}
+	item[ddbSortKey] = &dynamodbtypes.AttributeValueMemberS{Value: ddbMetaSK}
 
-	item["pk"] = &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", pe.ProjectID)}
-	item["sk"] = &dynamodbtypes.AttributeValueMemberS{Value: "META"}
-
-	_, err = d.client.PutItem(ctx, &dynamodb.PutItemInput{
+	_, err := d.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(d.tableName),
 		Item:      item,
 	})
@@ -235,8 +237,8 @@ func (d *DDBClient) ReadProjectEntry(ctx context.Context, project string) (Proje
 	result, err := d.client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(d.tableName),
 		Key: map[string]dynamodbtypes.AttributeValue{
-			"pk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
-			"sk": &dynamodbtypes.AttributeValueMemberS{Value: "META"},
+			ddbPrimaryKey: &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf(ddbProjectPKFmt, project)},
+			ddbSortKey:    &dynamodbtypes.AttributeValueMemberS{Value: ddbMetaSK},
 		},
 	})
 	if err != nil {
@@ -256,12 +258,13 @@ func (d *DDBClient) ReadProjectEntry(ctx context.Context, project string) (Proje
 }
 
 func (d *DDBClient) DeleteProjectEntry(ctx context.Context, project string) error {
-	// Query for all items with this project's pk
+	projectPK := fmt.Sprintf(ddbProjectPKFmt, project)
+
 	queryResult, err := d.client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(d.tableName),
-		KeyConditionExpression: aws.String("pk = :project"),
+		KeyConditionExpression: aws.String(ddbPrimaryKey + " = :project"),
 		ExpressionAttributeValues: map[string]dynamodbtypes.AttributeValue{
-			":project": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
+			":project": &dynamodbtypes.AttributeValueMemberS{Value: projectPK},
 		},
 	})
 	if err != nil {
@@ -275,14 +278,13 @@ func (d *DDBClient) DeleteProjectEntry(ctx context.Context, project string) erro
 	// Add all items to transaction for deletion
 	var transactItems []dynamodbtypes.TransactWriteItem
 	for _, item := range queryResult.Items {
-		pk := item["pk"].(*dynamodbtypes.AttributeValueMemberS).Value
-		sk := item["sk"].(*dynamodbtypes.AttributeValueMemberS).Value
+		sk := item[ddbSortKey].(*dynamodbtypes.AttributeValueMemberS).Value
 
 		transactItems = append(transactItems, dynamodbtypes.TransactWriteItem{
 			Delete: &dynamodbtypes.Delete{
 				Key: map[string]dynamodbtypes.AttributeValue{
-					"pk": &dynamodbtypes.AttributeValueMemberS{Value: pk},
-					"sk": &dynamodbtypes.AttributeValueMemberS{Value: sk},
+					ddbPrimaryKey: &dynamodbtypes.AttributeValueMemberS{Value: projectPK},
+					ddbSortKey:    &dynamodbtypes.AttributeValueMemberS{Value: sk},
 				},
 				TableName: aws.String(d.tableName),
 			},
@@ -314,8 +316,8 @@ func (d *DDBClient) CreateTokenEntry(ctx context.Context, token types.Token) err
 	}
 
 	// Add PK and SK for token entry
-	item["pk"] = &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", token.ProjectID)}
-	item["sk"] = &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("TOKEN#%s", token.ProjectToken.ID)}
+	item[ddbPrimaryKey] = &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf(ddbProjectPKFmt, te.ProjectID)}
+	item[ddbSortKey] = &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf(ddbTokenSKFmt, te.TokenID)}
 
 	_, err = d.client.PutItem(ctx, &dynamodb.PutItemInput{
 		TableName: aws.String(d.tableName),
@@ -332,8 +334,8 @@ func (d *DDBClient) ReadTokenEntry(ctx context.Context, project, token string) (
 	result, err := d.client.GetItem(ctx, &dynamodb.GetItemInput{
 		TableName: aws.String(d.tableName),
 		Key: map[string]dynamodbtypes.AttributeValue{
-			"pk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
-			"sk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("TOKEN#%s", token)},
+			ddbPrimaryKey: &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf(ddbProjectPKFmt, project)},
+			ddbSortKey:    &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf(ddbTokenSKFmt, token)},
 		},
 	})
 	if err != nil {
@@ -356,8 +358,8 @@ func (d *DDBClient) DeleteTokenEntry(ctx context.Context, project, token string)
 	_, err := d.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
 		TableName: aws.String(d.tableName),
 		Key: map[string]dynamodbtypes.AttributeValue{
-			"pk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
-			"sk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("TOKEN#%s", token)},
+			ddbPrimaryKey: &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf(ddbProjectPKFmt, project)},
+			ddbSortKey:    &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf(ddbTokenSKFmt, token)},
 		},
 	})
 	if err != nil {
@@ -370,10 +372,10 @@ func (d *DDBClient) DeleteTokenEntry(ctx context.Context, project, token string)
 func (d *DDBClient) ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error) {
 	result, err := d.client.Query(ctx, &dynamodb.QueryInput{
 		TableName:              aws.String(d.tableName),
-		KeyConditionExpression: aws.String("pk = :project AND begins_with(sk, :token_prefix)"),
+		KeyConditionExpression: aws.String(ddbPrimaryKey + " = :project AND begins_with(" + ddbSortKey + ", :token_prefix)"),
 		ExpressionAttributeValues: map[string]dynamodbtypes.AttributeValue{
-			":project":      &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
-			":token_prefix": &dynamodbtypes.AttributeValueMemberS{Value: "TOKEN#"},
+			":project":      &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf(ddbProjectPKFmt, project)},
+			":token_prefix": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf(ddbTokenSKFmt, "")},
 		},
 	})
 	if err != nil {
