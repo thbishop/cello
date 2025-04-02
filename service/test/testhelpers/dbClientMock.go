@@ -29,7 +29,7 @@ var _ db.Client = &DBClientMock{}
 //			DeleteProjectEntryFunc: func(ctx context.Context, project string) error {
 //				panic("mock out the DeleteProjectEntry method")
 //			},
-//			DeleteTokenEntryFunc: func(ctx context.Context, token string) error {
+//			DeleteTokenEntryFunc: func(ctx context.Context, project string, token string) error {
 //				panic("mock out the DeleteTokenEntry method")
 //			},
 //			HealthFunc: func(ctx context.Context) error {
@@ -41,7 +41,7 @@ var _ db.Client = &DBClientMock{}
 //			ReadProjectEntryFunc: func(ctx context.Context, project string) (db.ProjectEntry, error) {
 //				panic("mock out the ReadProjectEntry method")
 //			},
-//			ReadTokenEntryFunc: func(ctx context.Context, token string) (db.TokenEntry, error) {
+//			ReadTokenEntryFunc: func(ctx context.Context, project string, token string) (db.TokenEntry, error) {
 //				panic("mock out the ReadTokenEntry method")
 //			},
 //		}
@@ -61,7 +61,7 @@ type DBClientMock struct {
 	DeleteProjectEntryFunc func(ctx context.Context, project string) error
 
 	// DeleteTokenEntryFunc mocks the DeleteTokenEntry method.
-	DeleteTokenEntryFunc func(ctx context.Context, token string) error
+	DeleteTokenEntryFunc func(ctx context.Context, project string, token string) error
 
 	// HealthFunc mocks the Health method.
 	HealthFunc func(ctx context.Context) error
@@ -73,7 +73,7 @@ type DBClientMock struct {
 	ReadProjectEntryFunc func(ctx context.Context, project string) (db.ProjectEntry, error)
 
 	// ReadTokenEntryFunc mocks the ReadTokenEntry method.
-	ReadTokenEntryFunc func(ctx context.Context, token string) (db.TokenEntry, error)
+	ReadTokenEntryFunc func(ctx context.Context, project string, token string) (db.TokenEntry, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -102,6 +102,8 @@ type DBClientMock struct {
 		DeleteTokenEntry []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
+			// Project is the project argument value.
+			Project string
 			// Token is the token argument value.
 			Token string
 		}
@@ -128,6 +130,8 @@ type DBClientMock struct {
 		ReadTokenEntry []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
+			// Project is the project argument value.
+			Project string
 			// Token is the token argument value.
 			Token string
 		}
@@ -251,21 +255,23 @@ func (mock *DBClientMock) DeleteProjectEntryCalls() []struct {
 }
 
 // DeleteTokenEntry calls DeleteTokenEntryFunc.
-func (mock *DBClientMock) DeleteTokenEntry(ctx context.Context, token string) error {
+func (mock *DBClientMock) DeleteTokenEntry(ctx context.Context, project string, token string) error {
 	if mock.DeleteTokenEntryFunc == nil {
 		panic("DBClientMock.DeleteTokenEntryFunc: method is nil but Client.DeleteTokenEntry was just called")
 	}
 	callInfo := struct {
-		Ctx   context.Context
-		Token string
+		Ctx     context.Context
+		Project string
+		Token   string
 	}{
-		Ctx:   ctx,
-		Token: token,
+		Ctx:     ctx,
+		Project: project,
+		Token:   token,
 	}
 	mock.lockDeleteTokenEntry.Lock()
 	mock.calls.DeleteTokenEntry = append(mock.calls.DeleteTokenEntry, callInfo)
 	mock.lockDeleteTokenEntry.Unlock()
-	return mock.DeleteTokenEntryFunc(ctx, token)
+	return mock.DeleteTokenEntryFunc(ctx, project, token)
 }
 
 // DeleteTokenEntryCalls gets all the calls that were made to DeleteTokenEntry.
@@ -273,12 +279,14 @@ func (mock *DBClientMock) DeleteTokenEntry(ctx context.Context, token string) er
 //
 //	len(mockedClient.DeleteTokenEntryCalls())
 func (mock *DBClientMock) DeleteTokenEntryCalls() []struct {
-	Ctx   context.Context
-	Token string
+	Ctx     context.Context
+	Project string
+	Token   string
 } {
 	var calls []struct {
-		Ctx   context.Context
-		Token string
+		Ctx     context.Context
+		Project string
+		Token   string
 	}
 	mock.lockDeleteTokenEntry.RLock()
 	calls = mock.calls.DeleteTokenEntry
@@ -391,21 +399,23 @@ func (mock *DBClientMock) ReadProjectEntryCalls() []struct {
 }
 
 // ReadTokenEntry calls ReadTokenEntryFunc.
-func (mock *DBClientMock) ReadTokenEntry(ctx context.Context, token string) (db.TokenEntry, error) {
+func (mock *DBClientMock) ReadTokenEntry(ctx context.Context, project string, token string) (db.TokenEntry, error) {
 	if mock.ReadTokenEntryFunc == nil {
 		panic("DBClientMock.ReadTokenEntryFunc: method is nil but Client.ReadTokenEntry was just called")
 	}
 	callInfo := struct {
-		Ctx   context.Context
-		Token string
+		Ctx     context.Context
+		Project string
+		Token   string
 	}{
-		Ctx:   ctx,
-		Token: token,
+		Ctx:     ctx,
+		Project: project,
+		Token:   token,
 	}
 	mock.lockReadTokenEntry.Lock()
 	mock.calls.ReadTokenEntry = append(mock.calls.ReadTokenEntry, callInfo)
 	mock.lockReadTokenEntry.Unlock()
-	return mock.ReadTokenEntryFunc(ctx, token)
+	return mock.ReadTokenEntryFunc(ctx, project, token)
 }
 
 // ReadTokenEntryCalls gets all the calls that were made to ReadTokenEntry.
@@ -413,12 +423,14 @@ func (mock *DBClientMock) ReadTokenEntry(ctx context.Context, token string) (db.
 //
 //	len(mockedClient.ReadTokenEntryCalls())
 func (mock *DBClientMock) ReadTokenEntryCalls() []struct {
-	Ctx   context.Context
-	Token string
+	Ctx     context.Context
+	Project string
+	Token   string
 } {
 	var calls []struct {
-		Ctx   context.Context
-		Token string
+		Ctx     context.Context
+		Project string
+		Token   string
 	}
 	mock.lockReadTokenEntry.RLock()
 	calls = mock.calls.ReadTokenEntry

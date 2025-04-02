@@ -34,8 +34,8 @@ type Client interface {
 	DeleteProjectEntry(ctx context.Context, project string) error
 	ReadProjectEntry(ctx context.Context, project string) (ProjectEntry, error)
 	CreateTokenEntry(ctx context.Context, token types.Token) error
-	DeleteTokenEntry(ctx context.Context, token string) error
-	ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error)
+	DeleteTokenEntry(ctx context.Context, project, token string) error
+	ReadTokenEntry(ctx context.Context, project, token string) (TokenEntry, error)
 	ListTokenEntries(ctx context.Context, project string) ([]TokenEntry, error)
 	Health(ctx context.Context) error
 }
@@ -152,7 +152,7 @@ func (d SQLClient) CreateTokenEntry(ctx context.Context, token types.Token) erro
 	return err
 }
 
-func (d SQLClient) DeleteTokenEntry(ctx context.Context, token string) error {
+func (d SQLClient) DeleteTokenEntry(ctx context.Context, project, token string) error {
 	sess, err := d.createSession()
 	if err != nil {
 		return err
@@ -162,7 +162,7 @@ func (d SQLClient) DeleteTokenEntry(ctx context.Context, token string) error {
 	return sess.WithContext(ctx).Collection(TokenEntryDB).Find("token_id", token).Delete()
 }
 
-func (d SQLClient) ReadTokenEntry(ctx context.Context, token string) (TokenEntry, error) {
+func (d SQLClient) ReadTokenEntry(ctx context.Context, project, token string) (TokenEntry, error) {
 	res := TokenEntry{}
 	sess, err := d.createSession()
 	if err != nil {
@@ -170,6 +170,7 @@ func (d SQLClient) ReadTokenEntry(ctx context.Context, token string) (TokenEntry
 	}
 	defer sess.Close()
 
+	// Note: We ignore the project parameter since token_id is unique in PostgreSQL
 	err = sess.WithContext(ctx).Collection(TokenEntryDB).Find("token_id", token).One(&res)
 	return res, err
 }

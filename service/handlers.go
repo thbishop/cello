@@ -1083,7 +1083,7 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 		level.Warn(l).Log("message", "token does not exist in credential provider", "error", err)
 	}
 
-	dbProjectToken, err := h.dbClient.ReadTokenEntry(ctx, tokenID)
+	dbProjectToken, err := h.dbClient.ReadTokenEntry(ctx, projectName, tokenID)
 	if err != nil {
 		// do not return an error if project token is not found
 		if !errors.Is(err, upper.ErrNoMoreRows) {
@@ -1098,7 +1098,7 @@ func (h handler) deleteToken(w http.ResponseWriter, r *http.Request) {
 	// only delete token if exists in DB
 	if !dbProjectToken.IsEmpty() {
 		level.Debug(l).Log("message", "deleting token from database")
-		if err = h.dbClient.DeleteTokenEntry(ctx, tokenID); err != nil {
+		if err = h.dbClient.DeleteTokenEntry(ctx, projectName, tokenID); err != nil {
 			level.Error(l).Log("message", "error deleting token from database", "error", err)
 			h.errorResponse(w, "error deleting token", http.StatusInternalServerError)
 			return
