@@ -256,15 +256,45 @@ func (d *DDBClient) ReadProjectEntry(ctx context.Context, project string) (Proje
 }
 
 func (d *DDBClient) DeleteProjectEntry(ctx context.Context, project string) error {
-	_, err := d.client.DeleteItem(ctx, &dynamodb.DeleteItemInput{
-		TableName: aws.String(d.tableName),
-		Key: map[string]dynamodbtypes.AttributeValue{
-			"pk": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
-			"sk": &dynamodbtypes.AttributeValueMemberS{Value: "META"},
+	// Query for all items with this project's pk
+	queryResult, err := d.client.Query(ctx, &dynamodb.QueryInput{
+		TableName:              aws.String(d.tableName),
+		KeyConditionExpression: aws.String("pk = :project"),
+		ExpressionAttributeValues: map[string]dynamodbtypes.AttributeValue{
+			":project": &dynamodbtypes.AttributeValueMemberS{Value: fmt.Sprintf("PROJECT#%s", project)},
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("failed to delete project entry: %w", err)
+		return fmt.Errorf("failed to query project entries: %w", err)
+	}
+
+	if len(queryResult.Items) == 0 {
+		return nil
+	}
+
+	// Add all items to transaction for deletion
+	var transactItems []dynamodbtypes.TransactWriteItem
+	for _, item := range queryResult.Items {
+		pk := item["pk"].(*dynamodbtypes.AttributeValueMemberS).Value
+		sk := item["sk"].(*dynamodbtypes.AttributeValueMemberS).Value
+
+		transactItems = append(transactItems, dynamodbtypes.TransactWriteItem{
+			Delete: &dynamodbtypes.Delete{
+				Key: map[string]dynamodbtypes.AttributeValue{
+					"pk": &dynamodbtypes.AttributeValueMemberS{Value: pk},
+					"sk": &dynamodbtypes.AttributeValueMemberS{Value: sk},
+				},
+				TableName: aws.String(d.tableName),
+			},
+		})
+	}
+
+	// Execute transaction to delete all items
+	_, err = d.client.TransactWriteItems(ctx, &dynamodb.TransactWriteItemsInput{
+		TransactItems: transactItems,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete items in transaction: %w", err)
 	}
 
 	return nil
