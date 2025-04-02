@@ -17,7 +17,7 @@ import (
 )
 
 type ProjectEntry struct {
-	ProjectID  string `db:"project" dynamodbav:"pk"`
+	ProjectID  string `db:"project" dynamodbav:"-"` // ignore in ddb as it's in pk
 	Repository string `db:"repository" dynamodbav:"repository"`
 }
 
